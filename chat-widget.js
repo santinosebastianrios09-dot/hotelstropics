@@ -224,9 +224,11 @@
   // ───────────── Carga catálogo habitaciones ─────────────
   async function loadRooms() {
     try {
-      const r = await fetch(API + '/api/web/rooms');
+      const r = await fetch(API + '/api/rooms');
       const j = await r.json();
-      state.rooms = j.rooms || [];
+      // Acepta tanto { rooms: [...] } como un array directo [...]
+      const arr = Array.isArray(j) ? j : (Array.isArray(j?.rooms) ? j.rooms : []);
+      state.rooms = arr;
     } catch { state.rooms = []; }
   }
 
@@ -291,7 +293,7 @@
     // Default
     pushBot('Por favor, aguarde un momento. En breve responderemos su consulta. Gracias.');
     try {
-      const r = await fetch(API + '/api/web/consulta', {
+      const r = await fetch(API + '/api/consulta', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ pregunta: text })
@@ -303,7 +305,7 @@
         const poll = async () => {
           if (done) return;
           try {
-            const rr = await fetch(API + '/api/web/consulta/wait?token=' + encodeURIComponent(j.token));
+            const rr = await fetch(API + '/api/consulta/wait?token=' + encodeURIComponent(j.token));
             if (rr.status === 200) {
               const jj = await rr.json();
               if (jj.respuesta) { pushBot(jj.respuesta); done = true; return; }
@@ -318,9 +320,10 @@
       }
     } catch {
       try {
-        const r = await fetch(API + '/api/web/rooms');
+        const r = await fetch(API + '/api/rooms');
         const j = await r.json();
-        const names = (j.rooms || []).map(r => '• ' + r.name).join('<br>');
+        const arr = Array.isArray(j) ? j : (Array.isArray(j?.rooms) ? j.rooms : []);
+        const names = (arr || []).map(r => '• ' + (r.name || r.id)).join('<br>');
         pushBot(names ? 'Habitaciones disponibles ahora:<br>' + names : 'No fue posible obtener las habitaciones disponibles en este momento.');
       } catch {
         pushBot('No fue posible enviar su consulta. Por favor, inténtelo nuevamente.');
@@ -405,16 +408,16 @@
       const loadingCard = card('Buscando habitaciones disponibles…');
       results.appendChild(loadingCard);
       try {
-        const roomsRes = await fetch(API+'/api/web/rooms');
+        const roomsRes = await fetch(API+'/api/rooms');
         const roomsJson = await roomsRes.json();
-        const rooms = roomsJson.rooms || [];
+        const rooms = Array.isArray(roomsJson) ? roomsJson : (roomsJson?.rooms || []);
         const fromISO = formatISO(from);
         const toISO   = formatISO(to);
 
         const available = [];
         for (const r of rooms) {
           try {
-            const aRes = await fetch(API+'/api/web/availability', {
+            const aRes = await fetch(API+'/api/availability', {
               method:'POST', headers:{'Content-Type':'application/json'},
               body: JSON.stringify({ habitacion: r.id || r.name, fechaEntrada: fromISO, fechaSalida: toISO })
             });
@@ -478,7 +481,7 @@
 
   function askReservaHabitacion() {
     state.mode = 'reserva_habitacion';
-    const chips = (state.rooms || []).slice(0,8).map(r => chip(r.name));
+    const chips = (state.rooms || []).slice(0,8).map(r => chip(r.name || r.id));
     showStep({
       title: 'Hacer una reserva',
       html: 'Seleccione el tipo de habitación:',
@@ -546,7 +549,7 @@
   async function ensureStillAvailable() {
     const d = state.draft || {};
     try {
-      const r = await fetch(API + '/api/web/availability', {
+      const r = await fetch(API + '/api/availability', {
         method: 'POST',
         headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({
@@ -566,7 +569,7 @@
   async function checkAvailabilityAndShow() {
     const d = state.draft || {};
     try {
-      const r = await fetch(API + '/api/web/availability', {
+      const r = await fetch(API + '/api/availability', {
         method: 'POST',
         headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({
