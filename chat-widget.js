@@ -1,5 +1,10 @@
-// mvp_AGENTS/src/web/public/chat-widget.js
+<!-- mvp_AGENTS/src/web/public/chat-widget.js -->
+<script>
 (function () {
+  // === BACKEND PÚBLICO (túnel ngrok) ===
+  const API_BASE = 'https://nonallegiance-unpersuasively-roscoe.ngrok-free.dev';
+  const API = API_BASE;
+
   document.body.classList.add('cw-docked');
 
   // Lanzador (interruptor)
@@ -47,7 +52,6 @@
   const sendBtn = panel.querySelector('#cw-send');
   const closeBtn = panel.querySelector('#cw-close');
 
-  const API = location.origin;
   const state = { mode: 'idle', draft: {}, rooms: [], returnToEditHub: false };
 
   // --- Apertura/cierre ---
@@ -720,7 +724,7 @@
     const cancel = document.createElement('button');
     cancel.className = 'cw-btn';
     cancel.textContent = 'Cancelar';
-    cancel.onclick = showMainOptions;
+    cancel.onclick = showMainOptions();
 
     const confirm = document.createElement('button');
     confirm.className = 'cw-btn cw-prim';
@@ -1098,4 +1102,4 @@
   `;
   document.head.appendChild(style);
 })();
-
+</script>
