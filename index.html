@@ -1,4 +1,3 @@
-<!-- mvp_AGENTS/src/web/public/index.html -->
 <!doctype html>
 <html lang="es">
   <head>
@@ -6,9 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tropics Hotel – Reservas</title>
 
-    <!-- RUTAS RELATIVAS + cache-busting -->
-    <link rel="stylesheet" href="./chat-widget.css?v=3" />
-    <script src="./chat-widget.js?v=3" defer></script>
+    <!-- CSS principal + fallback por si el repo quedó con nombre “widget de chat.css” -->
+    <link rel="stylesheet" href="./chat-widget.css?v=4" />
+    <link rel="stylesheet" href="./widget%20de%20chat.css?v=4" />
+
+    <!-- JS principal con fallback automático al nombre “widget de chat.js” -->
+    <script
+      src="./chat-widget.js?v=4"
+      defer
+      onerror="(function(){var s=document.createElement('script');s.defer=true;s.src='./widget%20de%20chat.js?v=4';document.head.appendChild(s);}())"
+    ></script>
 
     <style>
       :root { --brand:#125; --accent:#ff5757; }
@@ -79,6 +85,6 @@
       </section>
     </main>
 
-    <!-- (No duplicar el <script> del chat aquí abajo) -->
+    <!-- No duplicar el <script> del chat aquí abajo -->
   </body>
 </html>
