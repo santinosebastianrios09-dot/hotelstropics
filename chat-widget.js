@@ -1,4 +1,5 @@
-// mvp_AGENTS/src/web/public/chat-widget.js
+<!-- mvp_AGENTS/src/web/public/chat-widget.js -->
+<script>
 (function () {
   // === BACKEND PÚBLICO (túnel ngrok) ===
   const API_BASE = 'https://nonallegiance-unpersuasively-roscoe.ngrok-free.dev';
@@ -144,7 +145,6 @@
 
   // ───────────── Helper: paso único (wizard) para reserva ─────────────
   function showStep(opts){
-    // opts: { title?:string, html:string, chips?:HTMLElement[], actions?:HTMLElement[] }
     clearBody(opts.title || 'Hacer una reserva');
     const step = document.createElement('div');
     step.className = 'cw-card';
@@ -167,7 +167,7 @@
     body.scrollTop = body.scrollHeight;
   }
 
-  // ───────────── Hub de edición (nuevo): permite editar 1+ campos y confirmar
+  // ───────────── Hub de edición ─────────────
   function showEditItemsHub(){
     state.mode = 'edit_hub';
     showStep({
@@ -206,7 +206,7 @@
     body.querySelector('#edit-tel').onclick    = () => { state.returnToEditHub = true; askReservaTelefono(); };
   }
 
-  // ───────────── Home (MENÚ PRINCIPAL) ─────────────
+  // ───────────── Home ─────────────
   function showMainOptions() {
     state.mode = 'idle';
     state.draft = {};
@@ -224,13 +224,13 @@
   // ───────────── Carga catálogo habitaciones ─────────────
   async function loadRooms() {
     try {
-      const r = await fetch(API + '/api/web/rooms');
+      const r = await fetch(API + '/api/rooms');               // <- FIX
       const j = await r.json();
       state.rooms = j.rooms || [];
     } catch { state.rooms = []; }
   }
 
-  // ───────────── FLUJO: CONSULTAS (relay TG) ─────────────
+  // ───────────── FLUJO: CONSULTAS ─────────────
   function openConsultaFlow() {
     clearBody('Consultas');
     state.mode = 'post_qna';
@@ -239,7 +239,7 @@
     stickyBack.style.display = 'block';
   }
 
-  // === NUEVO: saludos + intención (disponibilidad / reserva) en una sola frase ===
+  // Reglas
   const RE_BOOK = /(\breservar\b|\bhacer una reserva\b|\bquiero reservar\b|\bquiero hacer una reserva\b|\bbooking\b|\bbook\b)/i;
   const RE_HOLA = /\b(hola|buenas|buen[oa]s?\s+(tardes?|noches?|d[ií]as?)|hello|hi)\b/i;
   const RE_COMOESTA = /(c[oó]mo\s+est[aá]s?\??|qu[eé]\s+tal\??)/i;
@@ -291,7 +291,7 @@
     // Default
     pushBot('Por favor, aguarde un momento. En breve responderemos su consulta. Gracias.');
     try {
-      const r = await fetch(API + '/api/web/consulta', {
+      const r = await fetch(API + '/api/consulta', {         // <- FIX
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ pregunta: text })
@@ -303,7 +303,7 @@
         const poll = async () => {
           if (done) return;
           try {
-            const rr = await fetch(API + '/api/web/consulta/wait?token=' + encodeURIComponent(j.token));
+            const rr = await fetch(API + '/api/consulta/wait?token=' + encodeURIComponent(j.token)); // <- FIX
             if (rr.status === 200) {
               const jj = await rr.json();
               if (jj.respuesta) { pushBot(jj.respuesta); done = true; return; }
@@ -318,7 +318,7 @@
       }
     } catch {
       try {
-        const r = await fetch(API + '/api/web/rooms');
+        const r = await fetch(API + '/api/rooms');           // <- FIX
         const j = await r.json();
         const names = (j.rooms || []).map(r => '• ' + r.name).join('<br>');
         pushBot(names ? 'Habitaciones disponibles ahora:<br>' + names : 'No fue posible obtener las habitaciones disponibles en este momento.');
@@ -328,7 +328,7 @@
     }
   }
 
-  // ───────────── FLUJO: DISPONIBILIDAD ─────────────
+  // ───────────── DISPONIBILIDAD ─────────────
   function buildMonthGrid(baseDate){
     const year = baseDate.getFullYear();
     const month = baseDate.getMonth();
@@ -405,7 +405,7 @@
       const loadingCard = card('Buscando habitaciones disponibles…');
       results.appendChild(loadingCard);
       try {
-        const roomsRes = await fetch(API+'/api/web/rooms');
+        const roomsRes = await fetch(API+'/api/rooms');       // <- FIX
         const roomsJson = await roomsRes.json();
         const rooms = roomsJson.rooms || [];
         const fromISO = formatISO(from);
@@ -414,7 +414,7 @@
         const available = [];
         for (const r of rooms) {
           try {
-            const aRes = await fetch(API+'/api/web/availability', {
+            const aRes = await fetch(API+'/api/availability', { // <- FIX
               method:'POST', headers:{'Content-Type':'application/json'},
               body: JSON.stringify({ habitacion: r.id || r.name, fechaEntrada: fromISO, fechaSalida: toISO })
             });
@@ -450,7 +450,7 @@
           const c = card(html);
           c.querySelector('button').onclick = () => {
             state.draft = { habitacion: r.id || r.name, fechaEntrada: fromISO, fechaSalida: toISO, noches: nights };
-            openReservaFlow(); // salto al flujo de reserva con datos pre-cargados
+            openReservaFlow();
           };
           list.appendChild(c);
         });
@@ -462,15 +462,14 @@
     };
   }
 
-  // ───────────── FLUJO: RESERVA (wizard) ─────────────
+  // ───────────── RESERVA ─────────────
   function openReservaFlow() {
     clearBody('Hacer una reserva');
     hideHint();
     stickyBack.style.display = 'block';
-    askReservaNombre(); // 1) Nombre y apellido
+    askReservaNombre();
   }
 
-  // ───────────── Pasos de reserva ─────────────
   function askReservaNombre() {
     state.mode = 'reserva_nombre';
     showStep({ title:'Hacer una reserva', html:'Para comenzar, ¿a nombre de quién registramos la reserva?' });
@@ -546,7 +545,7 @@
   async function ensureStillAvailable() {
     const d = state.draft || {};
     try {
-      const r = await fetch(API + '/api/web/availability', {
+      const r = await fetch(API + '/api/availability', {    // <- FIX
         method: 'POST',
         headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({
@@ -566,7 +565,7 @@
   async function checkAvailabilityAndShow() {
     const d = state.draft || {};
     try {
-      const r = await fetch(API + '/api/web/availability', {
+      const r = await fetch(API + '/api/availability', {    // <- FIX
         method: 'POST',
         headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({
@@ -635,7 +634,7 @@
     }
   }
 
-  // === Modal “Editar datos” (selección rápida de campo a editar)
+  // === Modal “Editar datos”
   function openEditDataModal(){
     const overlay = document.createElement('div');
     overlay.className = 'cw-overlay';
@@ -666,7 +665,7 @@
       const selected = box.querySelector('input[name="edit-field"]:checked');
       const val = (selected && selected.value) || '';
       overlay.remove();
-      state.returnToEditHub = true; // tras editar volvemos al hub
+      state.returnToEditHub = true;
       if (val==='fechas') { state.mode='reserva_entrada'; showDateRangeStep(onDatesPicked); return; }
       if (val==='personas') { askReservaPax(); return; }
       if (val==='email') { askReservaEmail(); return; }
@@ -723,7 +722,7 @@
     const cancel = document.createElement('button');
     cancel.className = 'cw-btn';
     cancel.textContent = 'Cancelar';
-    cancel.onclick = showMainOptions; // <-- FIX: asignar la función, no ejecutarla ahora
+    cancel.onclick = showMainOptions; // <- FIX (no ejecutar ahora)
 
     const confirm = document.createElement('button');
     confirm.className = 'cw-btn cw-prim';
@@ -793,7 +792,7 @@
     }
   }
 
-  // ───────────── Reconocimiento de frases “somos dos personas” ─────────────
+  // ───────────── NLP rápido para “somos dos personas” ─────────────
   const WORD_TO_NUM = {
     'una':1,'uno':1,'un':1,
     'dos':2,'tres':3,'cuatro':4,'cinco':5,'seis':6,'siete':7,'ocho':8,'nueve':9,'diez':10,
@@ -812,12 +811,11 @@
     return null;
   }
 
-  // ───────────── Validaciones y manejo de entrada ─────────────
+  // ───────────── Validaciones y entrada ─────────────
   function looksLikeEmail(s){
     return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s||'').trim());
   }
 
-  // Abre el selector nativo de fecha de forma “pro”
   function openPicker(el){
     if (!el) return;
     if (typeof el.showPicker === 'function') {
@@ -981,7 +979,7 @@
     });
   }
 
-  // ───────────── Selector de rango de fechas (original para otros flujos) ─────────────
+  // ───────────── Selector “embebido” (para otros flujos) ─────────────
   function showDateRangePicker(onDone) {
     const wrap = document.createElement('div');
     wrap.className = 'cw-msg cw-bot';
@@ -1091,7 +1089,7 @@
       box-shadow: 0 2px 6px rgba(0,0,0,.06);
     }
 
-    /* NUEVO: modal de edición */
+    /* Modal de edición */
     .cw-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:2147483647; }
     .cw-modal{ background:#fff; border-radius:12px; max-width:420px; width:90%; box-shadow:0 10px 30px rgba(0,0,0,.2); overflow:hidden; }
     .cw-modal-head{ padding:12px 16px; border-bottom:1px solid #eef2f7; font-weight:700; }
@@ -1101,3 +1099,4 @@
   `;
   document.head.appendChild(style);
 })();
+</script>
