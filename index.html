@@ -5,9 +5,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tropics Hotel – Reservas</title>
-    <link rel="stylesheet" href="./chat-widget.css" />
-<script src="./chat-widget.js" defer></script>
- <style>
+
+    <!-- RUTAS RELATIVAS + cache-busting -->
+    <link rel="stylesheet" href="./chat-widget.css?v=2" />
+    <script src="./chat-widget.js?v=2" defer></script>
+
+    <style>
       :root { --brand:#125; --accent:#ff5757; }
       * { box-sizing:border-box; }
       body { margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color:#1d1d1f; }
@@ -76,8 +79,6 @@
       </section>
     </main>
 
-    <!-- Chat dock a la derecha -->
-    <script src="./chat-widget.js" defer></script>
+    <!-- (No duplicar el <script> del chat aquí abajo) -->
   </body>
 </html>
-
