@@ -1,5 +1,4 @@
-<!-- mvp_AGENTS/src/web/public/chat-widget.js -->
-<script>
+// mvp_AGENTS/src/web/public/chat-widget.js
 (function () {
   // === BACKEND PÚBLICO (túnel ngrok) ===
   const API_BASE = 'https://nonallegiance-unpersuasively-roscoe.ngrok-free.dev';
@@ -41,8 +40,7 @@
   // ───── TEXTO GUÍA ─────
   const hint = document.createElement('div');
   hint.id = 'cw-hint';
-  hint.style.cssText =
-    'display:none;font-size:12px;color:#6b7280;padding:6px 10px;background:#fff;border-top:1px solid #eef2f7;';
+  hint.style.cssText = 'display:none;font-size:12px;color:#6b7280;padding:6px 10px;background:#fff;border-top:1px solid #eef2f7;';
   panel.appendChild(hint);
   function showHint(t){ hint.textContent = t; hint.style.display = 'block'; }
   function hideHint(){ hint.style.display = 'none'; }
@@ -55,10 +53,7 @@
   const state = { mode: 'idle', draft: {}, rooms: [], returnToEditHub: false };
 
   // --- Apertura/cierre ---
-  function openPanel() {
-    panel.classList.add('open');
-    setTimeout(() => input && input.focus(), 50);
-  }
+  function openPanel() { panel.classList.add('open'); setTimeout(() => input && input.focus(), 50); }
   function closePanel() { panel.classList.remove('open'); }
   function togglePanel() { panel.classList.contains('open') ? closePanel() : openPanel(); }
   launcher.addEventListener('click', togglePanel);
@@ -108,19 +103,13 @@
     return el;
   }
   function pushBot(text, chips) {
-    const b = document.createElement('div');
-    b.className = 'cw-msg cw-bot';
+    const b = document.createElement('div'); b.className = 'cw-msg cw-bot';
     if (Array.isArray(chips) && chips.length) {
-      const p = document.createElement('p');
-      p.innerHTML = text;
-      b.appendChild(p);
-      const div = document.createElement('div');
-      div.className = 'cw-chips';
-      chips.forEach(c => div.appendChild(c));
-      b.appendChild(div);
+      const p = document.createElement('p'); p.innerHTML = text; b.appendChild(p);
+      const div = document.createElement('div'); div.className = 'cw-chips';
+      chips.forEach(c => div.appendChild(c)); b.appendChild(div);
     } else b.innerHTML = text;
-    body.appendChild(b);
-    body.scrollTop = body.scrollHeight;
+    body.appendChild(b); body.scrollTop = body.scrollHeight;
   }
   function pushUser(text) {
     const u = document.createElement('div');
@@ -130,15 +119,9 @@
     body.scrollTop = body.scrollHeight;
   }
   function pushButton(label, onclick) {
-    const wrap = document.createElement('div');
-    wrap.className = 'cw-msg cw-bot';
-    const btn = document.createElement('button');
-    btn.className = 'cw-btn';
-    btn.textContent = label;
-    btn.onclick = onclick;
-    wrap.appendChild(btn);
-    body.appendChild(wrap);
-    body.scrollTop = body.scrollHeight;
+    const wrap = document.createElement('div'); wrap.className = 'cw-msg cw-bot';
+    const btn = document.createElement('button'); btn.className = 'cw-btn'; btn.textContent = label; btn.onclick = onclick;
+    wrap.appendChild(btn); body.appendChild(wrap); body.scrollTop = body.scrollHeight;
   }
   function card(html){ const div=document.createElement('div'); div.className='cw-card'; div.innerHTML=html; return div; }
   function htmlesc(x){ return String(x).replace(/[&<>"]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
@@ -184,19 +167,10 @@
         </div>`
     });
 
-    const actions = document.createElement('div');
-    actions.className = 'cw-step-actions';
-    const cancel = document.createElement('button');
-    cancel.className = 'cw-btn';
-    cancel.textContent = 'Cancelar';
-    cancel.onclick = showConfirm;
-    const ok = document.createElement('button');
-    ok.className = 'cw-btn cw-prim';
-    ok.textContent = 'Confirmar datos';
-    ok.onclick = () => { state.returnToEditHub = false; showConfirm(); };
-    actions.appendChild(cancel);
-    actions.appendChild(ok);
-    body.appendChild(actions);
+    const actions = document.createElement('div'); actions.className = 'cw-step-actions';
+    const cancel = document.createElement('button'); cancel.className = 'cw-btn'; cancel.textContent = 'Cancelar'; cancel.onclick = showConfirm;
+    const ok = document.createElement('button'); ok.className = 'cw-btn cw-prim'; ok.textContent = 'Confirmar datos'; ok.onclick = () => { state.returnToEditHub = false; showConfirm(); };
+    actions.appendChild(cancel); actions.appendChild(ok); body.appendChild(actions);
 
     body.querySelector('#edit-nombre').onclick = () => { state.returnToEditHub = true; askReservaNombre(); };
     body.querySelector('#edit-hab').onclick    = () => { state.returnToEditHub = true; askReservaHabitacion(); };
@@ -211,8 +185,7 @@
     state.mode = 'idle';
     state.draft = {};
     state.returnToEditHub = false;
-    hideHint();
-    clearBody();
+    hideHint(); clearBody();
     stickyBack.style.display = 'none';
     pushBot('¿Qué le gustaría hacer?', [
       chip('🗨️ Hacer una consulta', () => openConsultaFlow()),
@@ -224,7 +197,7 @@
   // ───────────── Carga catálogo habitaciones ─────────────
   async function loadRooms() {
     try {
-      const r = await fetch(API + '/api/rooms');               // <- FIX
+      const r = await fetch(API + '/api/rooms');
       const j = await r.json();
       state.rooms = j.rooms || [];
     } catch { state.rooms = []; }
@@ -266,32 +239,21 @@
     const t = String(text||'');
     const greet = buildGreetingResponse(t);
     const wantsAvail = RE_AVAIL.test(t);
-    const wantsBook  = RE_BOOK.test(t);
+    theWantsBook  = RE_BOOK.test(t);
 
-    if (greet && (wantsAvail || wantsBook)) {
+    if (greet && (wantsAvail || theWantsBook)) {
       pushBot(greet);
       if (wantsAvail) { openDisponibilidadFlow(); pushBot('Te llevo a "Consultar disponibilidad" para ver opciones y fechas.'); return; }
-      if (wantsBook)  { openReservaFlow();        pushBot('Perfecto, te llevo a "Hacer una reserva".'); return; }
+      if (theWantsBook)  { openReservaFlow();    pushBot('Perfecto, te llevo a "Hacer una reserva".'); return; }
     }
-    if (wantsAvail) {
-      openDisponibilidadFlow();
-      pushBot('Te llevo a "Consultar disponibilidad" para ver opciones y fechas.');
-      return;
-    }
-    if (wantsBook) {
-      openReservaFlow();
-      pushBot('Perfecto, te llevo a "Hacer una reserva".');
-      return;
-    }
-    if (greet) {
-      pushBot(greet);
-      return;
-    }
+    if (wantsAvail) { openDisponibilidadFlow(); pushBot('Te llevo a "Consultar disponibilidad" para ver opciones y fechas.'); return; }
+    if (theWantsBook) { openReservaFlow(); pushBot('Perfecto, te llevo a "Hacer una reserva".'); return; }
+    if (greet) { pushBot(greet); return; }
 
     // Default
     pushBot('Por favor, aguarde un momento. En breve responderemos su consulta. Gracias.');
     try {
-      const r = await fetch(API + '/api/consulta', {         // <- FIX
+      const r = await fetch(API + '/api/consulta', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ pregunta: text })
@@ -303,7 +265,7 @@
         const poll = async () => {
           if (done) return;
           try {
-            const rr = await fetch(API + '/api/consulta/wait?token=' + encodeURIComponent(j.token)); // <- FIX
+            const rr = await fetch(API + '/api/consulta/wait?token=' + encodeURIComponent(j.token));
             if (rr.status === 200) {
               const jj = await rr.json();
               if (jj.respuesta) { pushBot(jj.respuesta); done = true; return; }
@@ -318,7 +280,7 @@
       }
     } catch {
       try {
-        const r = await fetch(API + '/api/rooms');           // <- FIX
+        const r = await fetch(API + '/api/rooms');
         const j = await r.json();
         const names = (j.rooms || []).map(r => '• ' + r.name).join('<br>');
         pushBot(names ? 'Habitaciones disponibles ahora:<br>' + names : 'No fue posible obtener las habitaciones disponibles en este momento.');
@@ -354,8 +316,7 @@
         <button id="cal-next" class="cw-btn">›</button>
       </div>
       <div class="cw-cal-grid" id="cal-grid"></div>
-      <div class="cw-cal-foot"
-           style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+      <div class="cw-cal-foot" style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
         <div>Desde: <span id="sel-from">—</span> · Hasta: <span id="sel-to">—</span></div>
         <button id="cal-confirm" class="cw-btn" disabled>Ver disponibilidad</button>
       </div>
@@ -405,7 +366,7 @@
       const loadingCard = card('Buscando habitaciones disponibles…');
       results.appendChild(loadingCard);
       try {
-        const roomsRes = await fetch(API+'/api/rooms');       // <- FIX
+        const roomsRes = await fetch(API+'/api/rooms');
         const roomsJson = await roomsRes.json();
         const rooms = roomsJson.rooms || [];
         const fromISO = formatISO(from);
@@ -414,7 +375,7 @@
         const available = [];
         for (const r of rooms) {
           try {
-            const aRes = await fetch(API+'/api/availability', { // <- FIX
+            const aRes = await fetch(API+'/api/availability', {
               method:'POST', headers:{'Content-Type':'application/json'},
               body: JSON.stringify({ habitacion: r.id || r.name, fechaEntrada: fromISO, fechaSalida: toISO })
             });
@@ -450,7 +411,7 @@
           const c = card(html);
           c.querySelector('button').onclick = () => {
             state.draft = { habitacion: r.id || r.name, fechaEntrada: fromISO, fechaSalida: toISO, noches: nights };
-            openReservaFlow();
+            openReservaFlow(); // salto al flujo de reserva con datos pre-cargados
           };
           list.appendChild(c);
         });
@@ -523,19 +484,13 @@
   // ───────────── Lógica de precios/disponibilidad ─────────────
   function inferNightlyFromRoom(room) {
     if (!room || typeof room !== 'object') return 0;
-    const candidates = [
-      'pricePerNight','price_night','nightly','price','basePrice',
-      'minPrice','priceUSD','usd','usdNight','usd_per_night',
-      'value','amount'
-    ];
+    const candidates = ['pricePerNight','price_night','nightly','price','basePrice','minPrice','priceUSD','usd','usdNight','usd_per_night','value','amount'];
     for (const k of candidates) {
-      const v = Number(room[k]);
-      if (Number.isFinite(v) && v > 0) return v;
+      const v = Number(room[k]); if (Number.isFinite(v) && v > 0) return v;
     }
     if (room.pricing && typeof room.pricing === 'object') {
       for (const k of candidates) {
-        const v = Number(room.pricing[k]);
-        if (Number.isFinite(v) && v > 0) return v;
+        const v = Number(room.pricing[k]); if (Number.isFinite(v) && v > 0) return v;
       }
     }
     return 0;
@@ -545,7 +500,7 @@
   async function ensureStillAvailable() {
     const d = state.draft || {};
     try {
-      const r = await fetch(API + '/api/availability', {    // <- FIX
+      const r = await fetch(API + '/api/availability', {
         method: 'POST',
         headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({
@@ -557,15 +512,13 @@
       });
       const j = await r.json();
       return (r.ok && j && j.ok && j.disponible !== false);
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   }
 
   async function checkAvailabilityAndShow() {
     const d = state.draft || {};
     try {
-      const r = await fetch(API + '/api/availability', {    // <- FIX
+      const r = await fetch(API + '/api/availability', {
         method: 'POST',
         headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({
@@ -606,28 +559,13 @@
 
       if (j.disponible !== false) {
         const monto = Number.isFinite(total) && total > 0 ? total : 0;
-        showStep({
-          title: 'Hacer una reserva',
-          html: `Disponibilidad confirmada para <b>${htmlesc(d.habitacion)}</b>.<br>Estimación: <b>USD ${monto}</b>`
-        });
-        const cont = document.createElement('button');
-        cont.className = 'cw-btn cw-prim';
-        cont.textContent = 'Continuar';
-        cont.onclick = showConfirm;
-        const actions = document.createElement('div');
-        actions.className = 'cw-step-actions';
-        actions.appendChild(cont);
-        body.appendChild(actions);
+        showStep({ title: 'Hacer una reserva', html: `Disponibilidad confirmada para <b>${htmlesc(d.habitacion)}</b>.<br>Estimación: <b>USD ${monto}</b>` });
+        const cont = document.createElement('button'); cont.className = 'cw-btn cw-prim'; cont.textContent = 'Continuar'; cont.onclick = showConfirm;
+        const actions = document.createElement('div'); actions.className = 'cw-step-actions'; actions.appendChild(cont); body.appendChild(actions);
       } else {
         showStep({ title:'Hacer una reserva', html:'No hay disponibilidad para esas fechas.' });
-        const choose = document.createElement('button');
-        choose.className = 'cw-btn';
-        choose.textContent = 'Elegir otra habitación';
-        choose.onclick = askReservaHabitacion;
-        const actions = document.createElement('div');
-        actions.className = 'cw-step-actions';
-        actions.appendChild(choose);
-        body.appendChild(actions);
+        const choose = document.createElement('button'); choose.className = 'cw-btn'; choose.textContent = 'Elegir otra habitación'; choose.onclick = askReservaHabitacion;
+        const actions = document.createElement('div'); actions.className = 'cw-step-actions'; actions.appendChild(choose); body.appendChild(actions);
       }
     } catch {
       showStep({ title:'Hacer una reserva', html:'No fue posible comprobar la disponibilidad. Por favor, inténtelo nuevamente.' });
@@ -636,19 +574,15 @@
 
   // === Modal “Editar datos”
   function openEditDataModal(){
-    const overlay = document.createElement('div');
-    overlay.className = 'cw-overlay';
-    const box = document.createElement('div');
-    box.className = 'cw-modal';
+    const overlay = document.createElement('div'); overlay.className = 'cw-overlay';
+    const box = document.createElement('div'); box.className = 'cw-modal';
     box.innerHTML = `
       <div class="cw-modal-head">Editar datos de la reserva</div>
       <div class="cw-modal-body">
         <div style="font-size:14px;color:#374151;margin-bottom:8px">Seleccione qué desea editar:</div>
         <div class="cw-radio-list" role="group" aria-label="Campos de edición">
           ${['Nombre','Habitación','Fechas','Personas','Email','Teléfono'].map((label,i)=>(
-            '<label class="cw-radio-item">' +
-            '<input type="radio" name="edit-field" value="'+label.toLowerCase()+'" '+(i===2?'checked':'')+' />' +
-            '<span>'+label+'</span></label>'
+            '<label class="cw-radio-item"><input type="radio" name="edit-field" value="'+label.toLowerCase()+'" '+(i===2?'checked':'')+' /><span>'+label+'</span></label>'
           )).join('')}
         </div>
       </div>
@@ -656,8 +590,7 @@
         <button id="cw-edit-cancel" class="cw-btn">Cerrar</button>
         <button id="cw-edit-confirm" class="cw-btn cw-prim">Confirmar</button>
       </div>`;
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
+    overlay.appendChild(box); document.body.appendChild(overlay);
 
     overlay.addEventListener('click', (e)=>{ if (e.target===overlay) overlay.remove(); });
     box.querySelector('#cw-edit-cancel').onclick = ()=> overlay.remove();
@@ -702,37 +635,17 @@
       `• Check-in: ${d.fechaEntrada}\n` +
       (d.fechaSalida ? `• Check-out: ${d.fechaSalida}\n` : `• Noches: ${d.noches}\n`) +
       `• Habitación: ${d.habitacion}\n` +
-      extraNoches +
-      extraEmail +
-      extraTel +
-      extraPax +
+      extraNoches + extraEmail + extraTel + extraPax +
       `• Total: USD ${totalParaCobrar}\n\n` +
       `Si todo es correcto, confirmaremos la solicitud y un agente validará el pago.`;
 
     showStep({ title:'Hacer una reserva', html: htmlesc(resumen).replace(/\n/g,'<br>') });
 
-    const actions = document.createElement('div');
-    actions.className = 'cw-step-actions';
-
-    const edit = document.createElement('button');
-    edit.className = 'cw-btn';
-    edit.textContent = 'Editar datos';
-    edit.onclick = () => { state.returnToEditHub = false; openEditDataModal(); };
-
-    const cancel = document.createElement('button');
-    cancel.className = 'cw-btn';
-    cancel.textContent = 'Cancelar';
-    cancel.onclick = showMainOptions; // <- FIX (no ejecutar ahora)
-
-    const confirm = document.createElement('button');
-    confirm.className = 'cw-btn cw-prim';
-    confirm.textContent = 'Confirmar reserva';
-    confirm.onclick = startCheckout;
-
-    actions.appendChild(edit);
-    actions.appendChild(cancel);
-    actions.appendChild(confirm);
-    body.appendChild(actions);
+    const actions = document.createElement('div'); actions.className = 'cw-step-actions';
+    const edit = document.createElement('button'); edit.className = 'cw-btn'; edit.textContent = 'Editar datos'; edit.onclick = () => { state.returnToEditHub = false; openEditDataModal(); };
+    const cancel = document.createElement('button'); cancel.className = 'cw-btn'; cancel.textContent = 'Cancelar'; cancel.onclick = showMainOptions; // ← no ejecutarla ahora
+    const confirm = document.createElement('button'); confirm.className = 'cw-btn cw-prim'; confirm.textContent = 'Confirmar reserva'; confirm.onclick = startCheckout;
+    actions.appendChild(edit); actions.appendChild(cancel); actions.appendChild(confirm); body.appendChild(actions);
 
     state.mode = 'post_qna';
     showHint('Puede escribir sus preguntas o confirmar cuando lo desee.');
@@ -744,23 +657,11 @@
     try {
       const okAvail = await ensureStillAvailable();
       if (!okAvail) {
-        showStep({
-          title:'Hacer una reserva',
-          html:'Lo sentimos, la habitación ya no está disponible para esas fechas. Por favor, elija otra fecha u otra habitación.'
-        });
-        const actions = document.createElement('div');
-        actions.className = 'cw-step-actions';
-        const btnFechas = document.createElement('button');
-        btnFechas.className = 'cw-btn';
-        btnFechas.textContent = 'Cambiar fechas';
-        btnFechas.onclick = () => { state.mode = 'reserva_entrada'; showDateRangeStep(onDatesPicked); };
-        const btnHab = document.createElement('button');
-        btnHab.className = 'cw-btn';
-        btnHab.textContent = 'Elegir otra habitación';
-        btnHab.onclick = askReservaHabitacion;
-        actions.appendChild(btnFechas);
-        actions.appendChild(btnHab);
-        body.appendChild(actions);
+        showStep({ title:'Hacer una reserva', html:'Lo sentimos, la habitación ya no está disponible para esas fechas. Por favor, elija otra fecha u otra habitación.' });
+        const actions = document.createElement('div'); actions.className = 'cw-step-actions';
+        const btnFechas = document.createElement('button'); btnFechas.className = 'cw-btn'; btnFechas.textContent = 'Cambiar fechas'; btnFechas.onclick = () => { state.mode = 'reserva_entrada'; showDateRangeStep(onDatesPicked); };
+        const btnHab = document.createElement('button'); btnHab.className = 'cw-btn'; btnHab.textContent = 'Elegir otra habitación'; btnHab.onclick = askReservaHabitacion;
+        actions.appendChild(btnFechas); actions.appendChild(btnHab); body.appendChild(actions);
         return;
       }
 
@@ -776,9 +677,7 @@
         total: (d.totalEstimado ?? 0),
         moneda: 'USD',
       };
-      const r = await fetch(API + '/api/checkout', {
-        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
-      });
+      const r = await fetch(API + '/api/checkout', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
       let ok = false; try { const j = await r.json(); ok = r.ok && j && j.ok; } catch { ok = r.ok; }
       if (!ok) throw new Error('fail');
 
@@ -792,35 +691,23 @@
     }
   }
 
-  // ───────────── NLP rápido para “somos dos personas” ─────────────
-  const WORD_TO_NUM = {
-    'una':1,'uno':1,'un':1,
-    'dos':2,'tres':3,'cuatro':4,'cinco':5,'seis':6,'siete':7,'ocho':8,'nueve':9,'diez':10,
-    'once':11,'doce':12,'trece':13,'catorce':14,'quince':15,'dieciseis':16,'dieciséis':16,
-    'diecisiete':17,'dieciocho':18,'diecinueve':19,'veinte':20
-  };
+  // ───────────── NLP simple para “somos dos personas” ─────────────
+  const WORD_TO_NUM = {'una':1,'uno':1,'un':1,'dos':2,'tres':3,'cuatro':4,'cinco':5,'seis':6,'siete':7,'ocho':8,'nueve':9,'diez':10,'once':11,'doce':12,'trece':13,'catorce':14,'quince':15,'dieciseis':16,'dieciséis':16,'diecisiete':17,'dieciocho':18,'diecinueve':19,'veinte':20};
   function parsePaxFromText(s){
     const t = String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const m1 = t.match(/(\d{1,3})\s*(personas?|huesped(?:es)?|pax)?\b/);
-    if (m1) {
-      const n = parseInt(m1[1],10);
-      if (Number.isInteger(n) && n>0) return n;
-    }
+    if (m1) { const n = parseInt(m1[1],10); if (Number.isInteger(n) && n>0) return n; }
     const m2 = t.match(/\b(una|uno|un|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|dieciseis|diecisiete|dieciocho|diecinueve|veinte)\b/);
     if (m2 && WORD_TO_NUM[m2[1]]) return WORD_TO_NUM[m2[1]];
     return null;
   }
 
   // ───────────── Validaciones y entrada ─────────────
-  function looksLikeEmail(s){
-    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s||'').trim());
-  }
+  function looksLikeEmail(s){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s||'').trim()); }
 
   function openPicker(el){
     if (!el) return;
-    if (typeof el.showPicker === 'function') {
-      try { el.showPicker(); return; } catch {}
-    }
+    if (typeof el.showPicker === 'function') { try { el.showPicker(); return; } catch {} }
     el.focus(); el.click();
   }
 
@@ -830,18 +717,14 @@
 
     const inReserva = state.mode && state.mode.indexOf('reserva_')===0;
 
-    if (!inReserva) {
-      pushUser(text);
-    }
+    if (!inReserva) { pushUser(text); }
     input.value = '';
 
-    if (state.mode === 'post_qna') {
-      return sendConsulta(text);
-    }
+    if (state.mode === 'post_qna') { return sendConsulta(text); }
 
     if (state.mode === 'idle') {
       if (/reserva/i.test(text)) return openReservaFlow();
-      return openConsultaFlow(), sendConsulta(text);
+      openConsultaFlow(); return sendConsulta(text);
     }
 
     // Orden de reserva (wizard)
@@ -886,18 +769,14 @@
         const parsed = parsePaxFromText(text);
         if (parsed && parsed >= 1) pax = parsed;
       }
-      if (!Number.isInteger(pax) || pax < 1) {
-        return askReservaPax();
-      }
+      if (!Number.isInteger(pax) || pax < 1) { return askReservaPax(); }
       state.draft.pax = pax;
       if (state.returnToEditHub) { showEditItemsHub(); return; }
       return askReservaEmail();
     }
 
     if (state.mode === 'reserva_email')  {
-      if (!looksLikeEmail(text)) {
-        return askReservaEmail();
-      }
+      if (!looksLikeEmail(text)) { return askReservaEmail(); }
       state.draft.email = text.trim();
       if (state.returnToEditHub) { showEditItemsHub(); return; }
       return askReservaTelefono();
@@ -923,9 +802,7 @@
 
   // ───────────── Saludo inicial ─────────────
   function greet() {
-    hideHint();
-    clearBody();
-    stickyBack.style.display = 'none';
+    hideHint(); clearBody(); stickyBack.style.display = 'none';
     pushBot('¡Hola! Soy su asistente de reservas. ¿En qué puedo ayudarle?', [
       chip('🗨️ Hacer una consulta', () => openConsultaFlow()),
       chip('📅 Consultar disponibilidad', () => openDisponibilidadFlow()),
@@ -981,8 +858,7 @@
 
   // ───────────── Selector “embebido” (para otros flujos) ─────────────
   function showDateRangePicker(onDone) {
-    const wrap = document.createElement('div');
-    wrap.className = 'cw-msg cw-bot';
+    const wrap = document.createElement('div'); wrap.className = 'cw-msg cw-bot';
     wrap.innerHTML = `
       <div class="cw-card">
         <div style="margin-bottom:8px;">Seleccione las fechas:</div>
@@ -1046,7 +922,6 @@
     .cw-chip, .cw-btn { background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 999px; padding: 6px 10px; cursor: pointer; }
     .cw-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; }
 
-    /* Calendario */
     .cw-cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
     .cw-cal-grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; }
     .cw-dow{ text-align:center; font-weight:700; color:#6b7280; }
@@ -1062,10 +937,7 @@
     .cw-room-meta{ display:flex; gap:12px; color:#374151; font-size:12px; }
     .cw-prim{ background:#1b5cff; color:#fff; border-color:#1b5cff; }
 
-    /* Wizard */
     .cw-step-actions{ display:flex; gap:8px; margin-top:10px; }
-
-    /* Grupo de fecha “prolijo” */
     .cw-date-group { display:flex; flex-direction:column; gap:6px; min-width: 142px; }
     .cw-date-label { font-weight:700; }
     .cw-sub { font-size:12px; color:#6b7280; margin-top:-4px; }
@@ -1074,22 +946,8 @@
     .cw-icon-btn { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:8px 10px; cursor:pointer; }
     .cw-icon-btn:hover { background:#f9fafb; }
 
-    /* Botón fijo lateral (único y pequeño) */
-    #cw-sticky-back {
-      position: absolute;
-      right: 8px;
-      top: 58px;
-      z-index: 1;
-      background: #f3f4f6;
-      border: 1px solid #e5e7eb;
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 12px;
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,.06);
-    }
+    #cw-sticky-back { position: absolute; right: 8px; top: 58px; z-index: 1; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 999px; padding: 4px 10px; font-size: 12px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
 
-    /* Modal de edición */
     .cw-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:2147483647; }
     .cw-modal{ background:#fff; border-radius:12px; max-width:420px; width:90%; box-shadow:0 10px 30px rgba(0,0,0,.2); overflow:hidden; }
     .cw-modal-head{ padding:12px 16px; border-bottom:1px solid #eef2f7; font-weight:700; }
@@ -1099,4 +957,3 @@
   `;
   document.head.appendChild(style);
 })();
-</script>
