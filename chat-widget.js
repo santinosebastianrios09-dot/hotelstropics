@@ -1,5 +1,4 @@
-<!-- mvp_AGENTS/src/web/public/chat-widget.js -->
-<script>
+// mvp_AGENTS/src/web/public/chat-widget.js
 (function () {
   // === BACKEND PÚBLICO (túnel ngrok) ===
   const API_BASE = 'https://nonallegiance-unpersuasively-roscoe.ngrok-free.dev';
@@ -724,7 +723,7 @@
     const cancel = document.createElement('button');
     cancel.className = 'cw-btn';
     cancel.textContent = 'Cancelar';
-    cancel.onclick = showMainOptions();
+    cancel.onclick = showMainOptions; // <-- FIX: asignar la función, no ejecutarla ahora
 
     const confirm = document.createElement('button');
     confirm.className = 'cw-btn cw-prim';
@@ -1081,12 +1080,12 @@
     #cw-sticky-back {
       position: absolute;
       right: 8px;
-      top: 58px;            /* debajo del header */
+      top: 58px;
       z-index: 1;
       background: #f3f4f6;
       border: 1px solid #e5e7eb;
       border-radius: 999px;
-      padding: 4px 10px;    /* tamaño reducido */
+      padding: 4px 10px;
       font-size: 12px;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0,0,0,.06);
@@ -1102,4 +1101,3 @@
   `;
   document.head.appendChild(style);
 })();
-</script>
