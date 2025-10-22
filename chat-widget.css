@@ -1,0 +1,307 @@
+/* mvp_AGENTS/src/web/public/chat-widget.css */
+:root{
+  --cw-bg:#fff;
+  --cw-primary:#1b5cff;
+  --cw-muted:#8b8b94;
+  --cw-border:#e7e7ec;
+  --cw-shadow: 0 20px 40px rgba(0,0,0,.12);
+  --cw-width: 380px;           /* ancho de referencia */
+  --cw-elev: 2147483000;       /* z-index alto para no taparse */
+}
+
+/* ───────── Lanzador (visible en mobile y desktop) ───────── */
+#cw-launcher{
+  position:fixed;
+  right:16px; bottom:16px; z-index:var(--cw-elev);
+  border:none; border-radius:999px; padding:12px 16px;
+  background:var(--cw-primary); color:#fff; font-weight:700; cursor:pointer;
+  box-shadow: 0 6px 16px rgba(0,0,0,.15);
+}
+
+/* ───────── Panel flotante (cuadrado) ───────── */
+#cw-panel{
+  position:fixed;
+  right:16px; bottom:80px; z-index:var(--cw-elev);
+  width:360px; max-width:calc(100vw - 32px);
+  height:520px; max-height:calc(100vh - 120px);
+  background:var(--cw-bg);
+  border:1px solid #e5e7eb; border-radius:14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  display:none; flex-direction:column; overflow:hidden;
+
+  /* Animación de aparición */
+  transform: translateY(10px);
+  opacity: 0; pointer-events: none;
+  transition: .25s ease;
+}
+#cw-panel.open{
+  display:flex;
+  transform: translateY(0);
+  opacity: 1; pointer-events: auto;
+}
+
+/* ───────── Head / Body / Foot ───────── */
+#cw-head{
+  padding:10px 12px; background: #0ea5e9; color:#fff;
+  display:flex; align-items:center; justify-content:space-between;
+}
+#cw-title{ font-weight:700; }
+#cw-close{
+  background:transparent; border:0; color:#fff; font-size:18px; cursor:pointer;
+}
+
+#cw-body{
+  padding:12px; flex:1; overflow:auto; background:#f9fafb;
+  display:flex; flex-direction:column;
+}
+
+#cw-foot{
+  display:flex; gap:8px; border-top:1px solid #e5e7eb; padding:8px; background:#fff;
+}
+#cw-text{
+  flex:1; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; outline:none;
+}
+#cw-send{
+  background:#0ea5e9; color:#fff; border:0; padding:10px 16px; border-radius:10px; cursor:pointer; font-weight:700;
+}
+
+/* ───────── Mensajes / Botones / Chips ───────── */
+.cw-msg{ margin:8px 0; max-width:90%; white-space:pre-wrap; }
+.cw-user{
+  align-self:flex-end; background:#dbeafe; padding:8px 10px;
+  border-radius:12px 12px 2px 12px;
+}
+.cw-bot{
+  align-self:flex-start; background:#fff; padding:8px 10px;
+  border:1px solid #e5e7eb; border-radius:12px 12px 12px 2px;
+}
+.cw-chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.cw-chip, .cw-btn{
+  background:#f3f4f6; border:1px solid #e5e7eb;
+  border-radius:999px; padding:6px 10px; cursor:pointer;
+}
+.cw-card{
+  background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:10px;
+}
+
+/* ───────── Responsivo ───────── */
+@media (max-width: 420px){
+  #cw-panel{
+    right:16px; left:16px; width:auto;
+    height: calc(100vh - 140px);
+  }
+}
+
+/* Nota:
+   - Se eliminó el comportamiento "docked" de escritorio y la regla que
+     ocultaba el launcher en desktop. Ahora el botón funciona como interruptor
+     en todas las resoluciones, consistente con el JS actualizado.
+*/
+
+/* ───────────────────── NUEVO: estilos para flujos separados y calendario ───────────────────── */
+
+/* Texto guía bajo el input (se muestra solo en modo post_qna) */
+#cw-hint{
+  display:none; font-size:12px; color:#6b7280; padding:6px 10px;
+  background:#fff; border-top:1px solid #eef2f7;
+}
+
+/* Utilidades */
+.cw-right{ display:flex; justify-content:flex-end; gap:8px; }
+.cw-prim{ background:var(--cw-primary); color:#fff; border-color:var(--cw-primary); }
+
+/* Formularios dentro del widget (Reserva/Consulta) */
+.cw-form{ display:flex; flex-direction:column; gap:10px; }
+.cw-form input, .cw-form textarea{
+  width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px; outline:none; background:#fff;
+}
+.cw-grid2{
+  display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+}
+.cw-thread{
+  max-height:240px; overflow:auto; border:1px dashed #e7e7ec; border-radius:10px; padding:8px; background:#fff;
+}
+.cw-back{
+  background:#fff; border:1px solid var(--cw-border); border-radius:8px; padding:6px 10px; cursor:pointer;
+}
+
+/* Calendario de rango (Disponibilidad) */
+.cw-cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.cw-cal-grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; }
+.cw-dow{ text-align:center; font-weight:700; color:#6b7280; }
+.cw-day{
+  border:1px solid #e5e7eb; background:#fff; border-radius:8px; padding:8px 0; cursor:pointer;
+}
+.cw-day.cw-muted{ opacity:.35; }
+.cw-in-range{ background:#eef2ff; border-color:#c7d2fe; }
+.cw-sel-from, .cw-sel-to{ background:var(--cw-primary); color:#fff; border-color:var(--cw-primary); }
+
+.cw-cal-foot{ display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
+
+/* Listado de habitaciones disponibles */
+.cw-list{ display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+.cw-room-item{
+  display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center;
+}
+.cw-room-name{ font-weight:800; }
+.cw-room-sub{ color:#6b7280; font-size:12px; }
+.cw-room-meta{ display:flex; gap:12px; color:#374151; font-size:12px; }
+
+/* ================================
+   🔥 Mejoras visuales de botones (sutiles, sin romper nada)
+   ================================ */
+.cw-btn{
+  transition: transform .15s ease, box-shadow .2s ease, background-color .2s ease, border-color .2s ease, color .2s ease;
+  will-change: transform;
+}
+.cw-btn:hover{ transform: translateY(-1px); }
+.cw-btn:active{ transform: translateY(0); }
+
+/* Botón “Ver habitación” más llamativo (selectivo) */
+.cw-btn.cw-callout{
+  background: linear-gradient(180deg, #2b2f36, #0b0d10);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow: 0 8px 24px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.cw-btn.cw-callout:hover{
+  box-shadow: 0 12px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+/* Mini “pulse” muy suave para destacar acciones importantes dentro del chat */
+@keyframes cwPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+.cw-btn.cw-callout.cw-pulse{
+  animation: cwPulse 1.2s ease-in-out 2;
+}
+
+/* ================================
+   🖼️ Lightbox exclusivo del CHAT
+   (oscuro/elegante, sombras suaves)
+   ================================ */
+#cw-panel .cw-lightbox{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.78);
+  backdrop-filter: blur(4px);
+  z-index: calc(var(--cw-elev) + 10);
+}
+#cw-panel .cw-lightbox.open{ display:flex; }
+
+#cw-panel .cw-lightbox .cw-lb-inner{
+  position: relative;
+  max-width: 92vw;
+  max-height: 92vh;
+  background: #0b0d10;
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 24px 60px rgba(0,0,0,.45);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+#cw-panel .cw-lightbox img{
+  display:block;
+  max-width: 92vw;
+  max-height: 74vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  background: #000;
+}
+
+#cw-panel .cw-lightbox .cw-lb-close{
+  position:absolute;
+  top:10px; right:10px;
+  width: 36px; height: 36px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(0,0,0,.6);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+#cw-panel .cw-lightbox .cw-lb-close:hover{ background: rgba(0,0,0,.8); }
+
+#cw-panel .cw-lightbox .cw-lb-caption{
+  background: #0f1115;
+  color: #e5e7eb;
+  border-top: 1px solid rgba(255,255,255,.08);
+  padding: 12px 14px;
+  font-size: 13px;
+}
+#cw-panel .cw-lightbox .cw-lb-caption h3{
+  margin: 0 0 4px;
+  font-size: 15px;
+  color:#fff;
+}
+#cw-panel .cw-lightbox .cw-lb-caption p{
+  margin:0;
+  color:#c4c7ce;
+  line-height: 1.35;
+}
+
+/* ──────────────────────────────────────────────────────────
+   ✅ NUEVO (añadido sin reemplazar): servicios/amenities,
+   acciones y mejoras de accesibilidad para el lightbox del chat.
+   Estas reglas SOLO amplían lo existente.
+   ────────────────────────────────────────────────────────── */
+#cw-panel .cw-lightbox .cw-lb-amenities{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  list-style:none;
+  padding:8px 0 0;
+  margin:8px 0 0;
+}
+#cw-panel .cw-lightbox .cw-lb-amenities li{
+  background:#161a22;
+  border:1px solid rgba(255,255,255,.08);
+  color:#e5e7eb;
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:12px;
+}
+#cw-panel .cw-lightbox .cw-lb-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  padding:10px 0 0;
+}
+#cw-panel .cw-lightbox .cw-btn{
+  background:#111; color:#fff; border:0;
+  padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:600;
+}
+#cw-panel .cw-lightbox .cw-btn:hover{ filter:brightness(0.95); }
+
+/* Accesibilidad: foco visible en cierre e interactivos dentro del modal */
+#cw-panel .cw-lightbox .cw-lb-close:focus,
+#cw-panel .cw-lightbox .cw-btn:focus{
+  outline:2px solid #60a5fa;
+  outline-offset:2px;
+}
+
+/* Ajustes responsivos del modal */
+@media (max-width: 480px){
+  #cw-panel .cw-lightbox .cw-lb-inner{
+    max-width: 96vw;
+    max-height: 92vh;
+  }
+  #cw-panel .cw-lightbox img{
+    max-width: 96vw;
+    max-height: 66vh;
+  }
+  #cw-panel .cw-lightbox .cw-lb-caption{
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+  #cw-panel .cw-lightbox .cw-lb-amenities li{
+    font-size:11px;
+    padding:5px 8px;
+  }
+}
