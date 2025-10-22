@@ -1,0 +1,116 @@
+/* mvp_AGENTS/src/web/public/visual/chat-visual.css
+   SOLO DISEÑO. No cambia funcionamiento.
+   Animaciones y micro-interacciones del chat (launcher, panel, input, botones internos).
+*/
+:root{
+  --tv-accent: #14b8a6; /* turquesa */
+  --tv-primary: #1b5cff;
+  --tv-jade: #00a86b;   /* ✅ JADE */
+  --tv-jade-2: #16c38a; /* jade claro para degradé */
+  --tv-shadow-lg: 0 18px 50px rgba(0,0,0,.18);
+  --tv-shadow-md: 0 10px 30px rgba(0,0,0,.14);
+}
+
+@keyframes tv-pop {
+  0% { transform: scale(.96); opacity:.0 }
+  60%{ transform: scale(1.02); opacity:1 }
+  100%{ transform: scale(1); }
+}
+
+/* ✅ Pulso más visible y en color jade */
+@keyframes tv-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(0,168,107,.55) }
+  70%  { box-shadow: 0 0 0 18px rgba(0,168,107,0) }
+  100% { box-shadow: 0 0 0 0 rgba(0,168,107,0) }
+}
+
+@keyframes tv-fade-up {
+  0% { transform: translateY(6px); opacity:0 }
+  100%{ transform: translateY(0); opacity:1 }
+}
+
+/* ===== Lanzador (botón flotante del chat) ===== */
+#cw-launcher{
+  /* ✅ Color jade + degradé y sombra más notoria */
+  background: linear-gradient(135deg, var(--tv-jade), var(--tv-jade-2)) !important;
+  color:#fff !important;
+  border: none !important;
+  box-shadow: 0 10px 24px rgba(0,168,107,.35) !important;
+
+  transition: transform .18s ease, box-shadow .2s ease, filter .2s ease;
+  font-weight:800;
+  letter-spacing:.2px;
+
+  /* pulso suave repetido cuando está oculto (lo dispara el JS) */
+  /* (si tu widget lo deja visible siempre, el JS lo apaga al abrir) */
+}
+#cw-launcher:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(0,168,107,.45) !important;
+  filter: brightness(1.03);
+}
+#cw-launcher:active{
+  transform: translateY(0);
+  filter: contrast(1.06);
+}
+
+/* ===== Panel principal ===== */
+#cw-panel{
+  backdrop-filter: blur(8px);
+  animation: tv-pop .22s ease-out both;
+  border-radius: 16px !important;
+  box-shadow: var(--tv-shadow-lg) !important;
+}
+
+/* ===== Header ===== */
+#cw-head{
+  position: relative;
+  background: linear-gradient(135deg, var(--tv-primary), var(--tv-accent));
+  color:#fff !important;
+}
+#cw-title{
+  font-weight:900 !important;
+  letter-spacing:.3px;
+}
+
+/* Botón cerrar */
+#cw-close{
+  transition: transform .18s ease, opacity .18s ease;
+  opacity:.9;
+}
+#cw-close:hover{ transform: rotate(90deg) scale(1.06); opacity:1 }
+
+/* Input + enviar */
+#cw-text{
+  transition: box-shadow .18s ease, transform .12s ease;
+  border-radius: 12px !important;
+}
+#cw-text:focus{
+  box-shadow: 0 0 0 3px rgba(27,92,255,.15);
+  transform: translateY(-1px);
+}
+#cw-send{
+  transition: transform .16s ease, filter .16s ease, box-shadow .16s ease;
+  border-radius: 12px !important;
+}
+#cw-send:hover{ transform: translateY(-1px) }
+#cw-send:active{ transform: translateY(0); filter: saturate(1.05) }
+
+/* Mensajes */
+.cw-msg{
+  animation: tv-fade-up .18s ease-out both;
+}
+.cw-msg + .cw-msg{ margin-top: .5rem }
+
+/* Scrollbar fino (webkit) */
+#cw-body::-webkit-scrollbar{ width: 8px }
+#cw-body::-webkit-scrollbar-thumb{
+  background: rgba(0,0,0,.14);
+  border-radius: 8px;
+}
+
+/* Chips / opciones */
+.cw-chip{
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.cw-chip:hover{ transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,.12) }
