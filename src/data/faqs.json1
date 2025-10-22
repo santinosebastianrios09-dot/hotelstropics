@@ -1,0 +1,4 @@
+{"q":"¿Cómo consulto disponibilidad de una habitación?","a":"Usá el comando /disponibilidad <ID> <desde> <hasta>. Ej: /disponibilidad H-004 2025-10-07 2025-10-10"}
+{"q":"¿Puedo ver mi reserva?","a":"Sí, con /reserva <código>. Ej: /reserva R-002"}
+{"q":"¿Qué estados de reserva existen?","a":"Pendiente, Confirmado, Pagado, Cancelado y No Show. Los admins pueden actualizar con /estado <código> <nuevo_estado>."}
+{"q":"¿Cómo obtengo un resumen?","a":"Usá /resumen para ver conteos por estado y próximas llegadas. Si CHARTS_ENABLED=true, incluye un gráfico QuickChart."}
