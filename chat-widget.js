@@ -1,9 +1,5 @@
 // mvp_AGENTS/src/web/public/chat-widget.js
 (function () {
-  // === BACKEND PÚBLICO (túnel ngrok) ===
-  const API_BASE = 'https://nonallegiance-unpersuasively-roscoe.ngrok-free.dev';
-  const API = API_BASE;
-
   document.body.classList.add('cw-docked');
 
   // Lanzador (interruptor)
@@ -34,7 +30,7 @@
   stickyBack.title = 'Volver';
   stickyBack.setAttribute('aria-label', 'Volver');
   stickyBack.style.display = 'none';
-  stickyBack.addEventListener('click', () => showMainOptions());
+  stickyBack.addEventListener('click', () => { hideFastBadge(); showMainOptions(); });
   panel.appendChild(stickyBack);
 
   // ───── TEXTO GUÍA ─────
@@ -46,12 +42,109 @@
   function showHint(t){ hint.textContent = t; hint.style.display = 'block'; }
   function hideHint(){ hint.style.display = 'none'; }
 
+  // ───── Badge "Reserva rápida" (diferenciador visual del flujo) ─────
+  const head = panel.querySelector('#cw-head');
+  const titleNode = panel.querySelector('#cw-title');
+  const fastWrap = document.createElement('div');
+  fastWrap.style.display = 'flex';
+  fastWrap.style.alignItems = 'center';
+  fastWrap.style.gap = '8px';
+  if (titleNode && titleNode.parentNode === head) {
+    head.insertBefore(fastWrap, head.firstChild);
+    fastWrap.appendChild(titleNode);
+  }
+  const fastBadge = document.createElement('span');
+  fastBadge.id = 'cw-badge-fast';
+  fastBadge.textContent = 'Reserva rápida';
+  fastBadge.setAttribute('aria-label', 'Reserva rápida');
+  fastBadge.style.display = 'none';
+  fastWrap.appendChild(fastBadge);
+  function showFastBadge(){ fastBadge.style.display = 'inline-flex'; }
+  function hideFastBadge(){ fastBadge.style.display = 'none'; }
+
   const body = panel.querySelector('#cw-body');
   const input = panel.querySelector('#cw-text');
   const sendBtn = panel.querySelector('#cw-send');
   const closeBtn = panel.querySelector('#cw-close');
 
+  const API = location.origin;
   const state = { mode: 'idle', draft: {}, rooms: [], returnToEditHub: false };
+
+  // ───────────── Utilidades comunes ─────────────
+  function htmlesc(x){ return String(x).replace(/[&<>"]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
+  function normalizeKey(x){ return String(x||'').trim().toLowerCase(); }
+
+  // Convierte URLs de Drive en directas (lh3 … =w1600) o deja otras intactas
+  function normalizeDriveUrl(url) {
+    const s = String(url || '').trim();
+    if (!s) return '';
+    // ya directo
+    if (/^https?:\/\/(?:lh3|lh\d)\.googleusercontent\.com\//i.test(s)) return s;
+    // /file/d/ID/view...
+    let m = s.match(/\/d\/([^/]+)\//);
+    if (!m) {
+      // open?id=ID o ?id=ID
+      m = s.match(/[?&]id=([^&]+)/);
+    }
+    const id = m && m[1] ? m[1] : null;
+    if (id) return `https://lh3.googleusercontent.com/d/${id}=w1600`;
+    return s;
+  }
+
+  function splitAmenities(v){
+    if (Array.isArray(v)) return v;
+    if (typeof v === 'string') {
+      return v.split(/[,•\n]+/).map(s=>s.trim()).filter(Boolean);
+    }
+    return [];
+  }
+
+  function decorateRoom(r){
+    // Acepta claves variadas desde Sheets/Backend
+    const rawImage =
+      r.imageUrl || r.IMAGEN_URL || r.IMAGEN_URL_DIRECTA ||
+      r.imagen_url || r.image_url || r.url || r.photo || r.foto || '';
+
+    const image = normalizeDriveUrl(rawImage);
+    const amenities = r.amenities || r.SERVICIOS || r.servicios || r.features || r.FEATURES || '';
+
+    return {
+      ...r,
+      name: r.name || r.NOMBRE || r.habitacion || r.HABITACIONES || r.id || 'Habitación',
+      id: r.id || r.ID || r.name,
+      imageUrl: image || '/img/hotel-1.jpg',
+      amenities: splitAmenities(amenities)
+    };
+  }
+
+  // Modal de previsualización de habitación (foto + lista de servicios)
+  function openRoomModal(room){
+    const r = decorateRoom(room || {});
+    const overlay = document.createElement('div');
+    overlay.className = 'cw-overlay';
+    const box = document.createElement('div');
+    box.className = 'cw-modal cw-modal-room';
+    box.innerHTML = `
+      <div class="cw-modal-head">${htmlesc(r.name)}</div>
+      <div class="cw-modal-body">
+        <img class="cw-room-img" src="${htmlesc(r.imageUrl)}" alt="${htmlesc(r.name)}" />
+        <ul class="cw-amenities">
+          ${(r.amenities && r.amenities.length ? r.amenities.map(a=>`<li>${htmlesc(a)}</li>`).join('') : '<li class="muted">Información próximamente</li>')}
+        </ul>
+      </div>
+      <div class="cw-modal-foot">
+        <button id="cw-room-close" class="cw-btn">Cerrar</button>
+      </div>`;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    // Fallback si falla la imagen
+    const imgEl = box.querySelector('.cw-room-img');
+    imgEl.onerror = () => { imgEl.onerror = null; imgEl.src = 'https://images.unsplash.com/photo-1551776235-dde6d4829808?q=80&w=1200&auto=format&fit=crop'; };
+
+    overlay.addEventListener('click', (e)=>{ if (e.target===overlay) overlay.remove(); });
+    box.querySelector('#cw-room-close').onclick = ()=> overlay.remove();
+  }
 
   // --- Apertura/cierre ---
   function openPanel() {
@@ -60,7 +153,7 @@
   }
   function closePanel() { panel.classList.remove('open'); }
   function togglePanel() { panel.classList.contains('open') ? closePanel() : openPanel(); }
-  launcher.addEventListener('click', togglePanel);
+  launcher.addEventListener('click', () => { hideFastBadge(); togglePanel(); });
   closeBtn.addEventListener('click', closePanel);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && panel.classList.contains('open')) closePanel(); });
 
@@ -140,7 +233,6 @@
     body.scrollTop = body.scrollHeight;
   }
   function card(html){ const div=document.createElement('div'); div.className='cw-card'; div.innerHTML=html; return div; }
-  function htmlesc(x){ return String(x).replace(/[&<>"]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
 
   // ───────────── Helper: paso único (wizard) para reserva ─────────────
   function showStep(opts){
@@ -167,7 +259,7 @@
     body.scrollTop = body.scrollHeight;
   }
 
-  // ───────────── Hub de edición (nuevo): permite editar 1+ campos y confirmar
+  // ───────────── Hub de edición (nuevo) ─────────────
   function showEditItemsHub(){
     state.mode = 'edit_hub';
     showStep({
@@ -214,6 +306,7 @@
     hideHint();
     clearBody();
     stickyBack.style.display = 'none';
+    hideFastBadge();
     pushBot('¿Qué le gustaría hacer?', [
       chip('🗨️ Hacer una consulta', () => openConsultaFlow()),
       chip('📅 Consultar disponibilidad', () => openDisponibilidadFlow()),
@@ -224,11 +317,9 @@
   // ───────────── Carga catálogo habitaciones ─────────────
   async function loadRooms() {
     try {
-      const r = await fetch(API + '/api/rooms');
+      const r = await fetch(API + '/api/web/rooms');
       const j = await r.json();
-      // Acepta tanto { rooms: [...] } como un array directo [...]
-      const arr = Array.isArray(j) ? j : (Array.isArray(j?.rooms) ? j.rooms : []);
-      state.rooms = arr;
+      state.rooms = (j.rooms || []).map(decorateRoom);
     } catch { state.rooms = []; }
   }
 
@@ -293,7 +384,7 @@
     // Default
     pushBot('Por favor, aguarde un momento. En breve responderemos su consulta. Gracias.');
     try {
-      const r = await fetch(API + '/api/consulta', {
+      const r = await fetch(API + '/api/web/consulta', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ pregunta: text })
@@ -305,10 +396,10 @@
         const poll = async () => {
           if (done) return;
           try {
-            const rr = await fetch(API + '/api/consulta/wait?token=' + encodeURIComponent(j.token));
+            const rr = await fetch(API + '/api/web/consulta/wait?token=' + encodeURIComponent(j.token));
             if (rr.status === 200) {
               const jj = await rr.json();
-              if (jj.respuesta) { pushBot(jj.respuesta); done = true; return; }
+              if (jj.respuesta) { pushBot(j.respuesta); done = true; return; }
             }
             if (rr.status === 204) setTimeout(poll, 2000);
             else setTimeout(poll, 4000);
@@ -320,10 +411,9 @@
       }
     } catch {
       try {
-        const r = await fetch(API + '/api/rooms');
+        const r = await fetch(API + '/api/web/rooms');
         const j = await r.json();
-        const arr = Array.isArray(j) ? j : (Array.isArray(j?.rooms) ? j.rooms : []);
-        const names = (arr || []).map(r => '• ' + (r.name || r.id)).join('<br>');
+        const names = (j.rooms || []).map(r => '• ' + r.name).join('<br>');
         pushBot(names ? 'Habitaciones disponibles ahora:<br>' + names : 'No fue posible obtener las habitaciones disponibles en este momento.');
       } catch {
         pushBot('No fue posible enviar su consulta. Por favor, inténtelo nuevamente.');
@@ -408,16 +498,16 @@
       const loadingCard = card('Buscando habitaciones disponibles…');
       results.appendChild(loadingCard);
       try {
-        const roomsRes = await fetch(API+'/api/rooms');
+        const roomsRes = await fetch(API+'/api/web/rooms');
         const roomsJson = await roomsRes.json();
-        const rooms = Array.isArray(roomsJson) ? roomsJson : (roomsJson?.rooms || []);
+        const rooms = (roomsJson.rooms || []).map(decorateRoom);
         const fromISO = formatISO(from);
         const toISO   = formatISO(to);
 
         const available = [];
         for (const r of rooms) {
           try {
-            const aRes = await fetch(API+'/api/availability', {
+            const aRes = await fetch(API+'/api/web/availability', {
               method:'POST', headers:{'Content-Type':'application/json'},
               body: JSON.stringify({ habitacion: r.id || r.name, fechaEntrada: fromISO, fechaSalida: toISO })
             });
@@ -442,16 +532,24 @@
           const total = nightly && nights ? nightly * nights : (j.total || 0);
           const html = `
             <div class="cw-room-item">
-              <div class="cw-room-name">${htmlesc(r.name || r.id)}</div>
-              <div class="cw-room-sub">${htmlesc(r.description || '')}</div>
-              <div class="cw-room-meta">
-                <span>${nights} noche(s)</span>
-                <span><b>Total estimado:</b> ${htmlesc(String(total || 'consultar'))}</span>
+              <div>
+                <div class="cw-room-name">${htmlesc(r.name || r.id)}</div>
+                <div class="cw-room-sub">${htmlesc(r.description || '')}</div>
+                <div class="cw-room-meta">
+                  <span>${nights} noche(s)</span>
+                  <span><b>Total estimado:</b> ${htmlesc(String(total || 'consultar'))}</span>
+                </div>
+                <div class="cw-actions">
+                  <button class="cw-btn cw-sec cw-view-room">Ver habitación</button>
+                </div>
               </div>
               <div class="cw-right"><button class="cw-btn cw-prim" data-room="${htmlesc(r.id || r.name)}">Reservar</button></div>
             </div>`;
           const c = card(html);
-          c.querySelector('button').onclick = () => {
+          // Ver habitación
+          c.querySelector('.cw-view-room').onclick = () => openRoomModal(r);
+          // Reservar
+          c.querySelector('.cw-right button').onclick = () => {
             state.draft = { habitacion: r.id || r.name, fechaEntrada: fromISO, fechaSalida: toISO, noches: nights };
             openReservaFlow(); // salto al flujo de reserva con datos pre-cargados
           };
@@ -479,14 +577,44 @@
     showStep({ title:'Hacer una reserva', html:'Para comenzar, ¿a nombre de quién registramos la reserva?' });
   }
 
-  function askReservaHabitacion() {
+  async function askReservaHabitacion() {
     state.mode = 'reserva_habitacion';
-    const chips = (state.rooms || []).slice(0,8).map(r => chip(r.name || r.id));
+
+    // ✅ Asegurar catálogo cargado antes de dibujar (evita imágenes repetidas o vacías)
+    if (!Array.isArray(state.rooms) || state.rooms.length === 0) {
+      await loadRooms();
+    }
+
+    const chips = (state.rooms || []).slice(0,8).map(r => chip(r.name));
+    // Grid prolija de habitaciones con botón "Ver habitación"
+    const grid = document.createElement('div');
+    grid.className = 'cw-room-grid';
+    (state.rooms || []).slice(0,4).forEach(r=>{
+      const rr = decorateRoom(r);
+      const cardEl = document.createElement('div');
+      cardEl.className = 'cw-room-card';
+      cardEl.innerHTML = `
+        <img class="cw-room-thumb" src="${htmlesc(rr.imageUrl)}" alt="${htmlesc(rr.name)}" />
+        <div class="cw-room-name">${htmlesc(rr.name)}</div>
+        <div class="cw-actions">
+          <button class="cw-btn cw-sec">Ver habitación</button>
+        </div>`;
+      // Fallback si falla la miniatura
+      const img = cardEl.querySelector('.cw-room-thumb');
+      img.onerror = () => { img.onerror = null; img.src = 'https://images.unsplash.com/photo-1551776235-dde6d4829808?q=80&w=1200&auto=format&fit=crop'; };
+
+      cardEl.querySelector('button').onclick = ()=> openRoomModal(rr);
+      grid.appendChild(cardEl);
+    });
+
     showStep({
       title: 'Hacer una reserva',
       html: 'Seleccione el tipo de habitación:',
       chips: (chips.length ? chips : [chip('Doble estándar')])
     });
+    // Insertar grid debajo del paso
+    const step = body.querySelector('#cw-step');
+    step.appendChild(grid);
   }
 
   function askReservaEntrada() {
@@ -530,7 +658,7 @@
     const candidates = [
       'pricePerNight','price_night','nightly','price','basePrice',
       'minPrice','priceUSD','usd','usdNight','usd_per_night',
-      'value','amount'
+      'value','amount','PRECIO_BASE'
     ];
     for (const k of candidates) {
       const v = Number(room[k]);
@@ -549,7 +677,7 @@
   async function ensureStillAvailable() {
     const d = state.draft || {};
     try {
-      const r = await fetch(API + '/api/availability', {
+      const r = await fetch(API + '/api/web/availability', {
         method: 'POST',
         headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({
@@ -569,7 +697,7 @@
   async function checkAvailabilityAndShow() {
     const d = state.draft || {};
     try {
-      const r = await fetch(API + '/api/availability', {
+      const r = await fetch(API + '/api/web/availability', {
         method: 'POST',
         headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({
@@ -610,9 +738,12 @@
 
       if (j.disponible !== false) {
         const monto = Number.isFinite(total) && total > 0 ? total : 0;
+        const ribbon = (fastBadge.style.display !== 'none')
+          ? `<div class="cw-fast-ribbon">Reserva rápida activa</div><div style="height:6px;"></div>`
+          : '';
         showStep({
           title: 'Hacer una reserva',
-          html: `Disponibilidad confirmada para <b>${htmlesc(d.habitacion)}</b>.<br>Estimación: <b>USD ${monto}</b>`
+          html: `${ribbon}Disponibilidad confirmada para <b>${htmlesc(d.habitacion)}</b>.<br>Estimación: <b>${htmlesc(d.moneda)} ${monto}</b>`
         });
         const cont = document.createElement('button');
         cont.className = 'cw-btn cw-prim';
@@ -638,7 +769,7 @@
     }
   }
 
-  // === Modal “Editar datos” (selección rápida de campo a editar)
+  // === Modal “Editar datos”
   function openEditDataModal(){
     const overlay = document.createElement('div');
     overlay.className = 'cw-overlay';
@@ -713,7 +844,11 @@
       `• Total: USD ${totalParaCobrar}\n\n` +
       `Si todo es correcto, confirmaremos la solicitud y un agente validará el pago.`;
 
-    showStep({ title:'Hacer una reserva', html: htmlesc(resumen).replace(/\n/g,'<br>') });
+    const ribbon = (fastBadge.style.display !== 'none')
+      ? `<div class="cw-fast-ribbon">Reserva rápida activa</div><div style="height:6px;"></div>`
+      : '';
+
+    showStep({ title:'Hacer una reserva', html: ribbon + htmlesc(resumen).replace(/\n/g,'<br>') });
 
     const actions = document.createElement('div');
     actions.className = 'cw-step-actions';
@@ -726,7 +861,7 @@
     const cancel = document.createElement('button');
     cancel.className = 'cw-btn';
     cancel.textContent = 'Cancelar';
-    cancel.onclick = showMainOptions; // <-- FIX: asignar la función, no ejecutarla ahora
+    cancel.onclick = showMainOptions;
 
     const confirm = document.createElement('button');
     confirm.className = 'cw-btn cw-prim';
@@ -853,6 +988,8 @@
     if (state.mode === 'reserva_nombre') {
       state.draft.nombre = text;
       if (state.returnToEditHub) { showEditItemsHub(); return; }
+      // Si la habitación ya está preseleccionada (Reserva rápida), saltar ese paso
+      if (state.draft && state.draft.habitacion) { return askReservaEntrada(); }
       return askReservaHabitacion();
     }
 
@@ -929,6 +1066,7 @@
   // ───────────── Saludo inicial ─────────────
   function greet() {
     hideHint();
+    hideFastBadge();
     clearBody();
     stickyBack.style.display = 'none';
     pushBot('¡Hola! Soy su asistente de reservas. ¿En qué puedo ayudarle?', [
@@ -1083,24 +1221,200 @@
     #cw-sticky-back {
       position: absolute;
       right: 8px;
-      top: 58px;
+      top: 58px;            /* debajo del header */
       z-index: 1;
       background: #f3f4f6;
       border: 1px solid #e5e7eb;
       border-radius: 999px;
-      padding: 4px 10px;
+      padding: 4px 10px;    /* tamaño reducido */
       font-size: 12px;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0,0,0,.06);
     }
 
-    /* NUEVO: modal de edición */
+    /* NUEVO: badge y ribbon de “Reserva rápida” */
+    #cw-badge-fast{
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:12px; line-height:1; padding:4px 8px; border-radius:999px;
+      background:#0ea5e9; color:#fff; border:1px solid rgba(255,255,255,.4);
+      text-transform:uppercase; letter-spacing:.3px; font-weight:800;
+    }
+    .cw-fast-ribbon{
+      display:inline-flex; align-items:center; gap:8px;
+      background:#e0f2fe; color:#0369a1; border:1px dashed #7dd3fc;
+      padding:6px 10px; border-radius:10px; font-size:12px; font-weight:700;
+    }
+
+    /* NUEVO: botón destacado para Reserva rápida */
+    .cw-btn-fast{
+      background: linear-gradient(135deg, #0ea5e9, #2563eb);
+      color:#fff;
+      border:1px solid rgba(0,0,0,.06);
+      box-shadow: 0 8px 18px rgba(37,99,235,.25), 0 2px 6px rgba(0,0,0,.08);
+      padding: 10px 14px;
+      font-weight: 800;
+      letter-spacing:.2px;
+    }
+    .cw-btn-fast:hover{ filter:brightness(1.05); transform: translateY(-1px); transition:.15s ease; }
+    .cw-btn-fast:active{ transform: translateY(0); box-shadow: 0 4px 10px rgba(37,99,235,.25); }
+
+    /* NUEVO: modal (compartido) */
     .cw-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:2147483647; }
-    .cw-modal{ background:#fff; border-radius:12px; max-width:420px; width:90%; box-shadow:0 10px 30px rgba(0,0,0,.2); overflow:hidden; }
+    .cw-modal{ background:#fff; border-radius:12px; max-width:520px; width:90%; box-shadow:0 10px 30px rgba(0,0,0,.2); overflow:hidden; border:1px solid #e5e7eb; }
     .cw-modal-head{ padding:12px 16px; border-bottom:1px solid #eef2f7; font-weight:700; }
-    .cw-modal-body{ padding:12px 16px; max-height:60vh; overflow:auto; }
+    .cw-modal-body{ padding:12px 16px; max-height:65vh; overflow:auto; }
     .cw-modal-foot{ display:flex; gap:8px; justify-content:flex-end; padding:12px 16px; border-top:1px solid #eef2f7; }
     .cw-radio-item{ display:flex; gap:8px; align-items:center; padding:6px 0; font-size:14px; cursor:pointer; }
+
+    /* NUEVO: estilos específicos de “Ver habitación” */
+    .cw-room-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:10px; }
+    .cw-room-card{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.06); display:flex; flex-direction:column; }
+    .cw-room-card img{ width:100%; height:120px; object-fit:cover; display:block; }
+    .cw-actions{ display:flex; gap:8px; align-items:center; justify-content:flex-start; margin-top:6px; }
+    .cw-btn.cw-sec{ background:#f3f4f6; color:#111827; }
+
+    .cw-modal-room .cw-room-img{ width:100%; height:220px; object-fit:cover; border-radius:10px; }
+    .cw-amenities{ margin:10px 0 0; padding-left:18px; font-size:14px; color:#374151; }
   `;
   document.head.appendChild(style);
+
+  // ===== NUEVO: flujo DIRECTO “Reserva rápida” desde la web (Reservar ya) =====
+  function openPreselectedFlow(roomName) {
+    clearBody('Reserva rápida');
+    showFastBadge();
+    hideHint();
+    stickyBack.style.display = 'block';
+    state.mode = 'idle';
+    state.draft = state.draft || {};
+    state.draft.habitacion = roomName;
+
+    // Buscar precio desde catálogo ya cargado
+    const room = (state.rooms || []).find(r => (String(r.name||r.id||'').toLowerCase() === String(roomName||'').toLowerCase()));
+    const nightly = inferNightlyFromRoom(room);
+    const curr    = (room && (room.currency || (room.pricing && room.pricing.currency))) || 'USD';
+
+    const msg = `
+      <div class="cw-fast-ribbon">Reserva rápida activa</div>
+      <div style="height:6px;"></div>
+      ¡Elegiste la habitación <b>${htmlesc(roomName)}</b> por el precio de
+      <b>${htmlesc(curr)} ${Number(nightly||0)}</b> por noche.<br>
+      Al continuar, tomaremos sus datos.
+    `.replace(/\s+/g,' ').trim();
+
+    pushBot(msg);
+
+    const actions = document.createElement('div');
+    actions.className = 'cw-step-actions';
+    const cont = document.createElement('button');
+    cont.className = 'cw-btn cw-btn-fast'; // ← destacado para Reserva rápida
+    cont.textContent = 'Presione continuar';
+    cont.onclick = () => {
+      // ✅ Solo aquí abrimos la nueva pestaña
+      const url = '/chat-simulacion.html?room=' + encodeURIComponent(roomName || '');
+      window.open(url, '_blank', 'noopener');
+
+      // (Opcional) continuar el flujo local. Si NO querés que siga, comentá la línea siguiente:
+      askReservaNombre();
+    };
+    actions.appendChild(cont);
+    body.appendChild(actions);
+  }
+
+  // Exponer API mínima para la web (abrir y preseleccionar habitación)
+  window.ChatWidget = window.ChatWidget || {};
+  window.ChatWidget.open = function(){ hideFastBadge(); openPanel(); };
+  window.ChatWidget.startPreselected = function(roomName){ openPanel(); openPreselectedFlow(roomName); };
+
+})();
+
+/* ================================
+   🧩 Chat-only lightbox + mejoras de botones
+   ================================ */
+(function(){
+  const panel = document.getElementById('cw-panel');
+  if (!panel) return;
+
+  // Create lightbox container once
+  let lb = panel.querySelector('.cw-lightbox');
+  if (!lb){
+    lb = document.createElement('div');
+    lb.className = 'cw-lightbox';
+    lb.setAttribute('aria-hidden','true');
+    lb.innerHTML = [
+      '<div class="cw-lb-inner" role="dialog" aria-modal="true">',
+      '  <button class="cw-lb-close" aria-label="Cerrar">×</button>',
+      '  <img class="cw-lb-img" alt="Imagen ampliada" />',
+      '  <div class="cw-lb-caption" style="display:none">',
+      '    <h3 class="cw-lb-title"></h3>',
+      '    <p class="cw-lb-text"></p>',
+      '  </div>',
+      '</div>'
+    ].join('');
+    panel.appendChild(lb);
+  }
+  const lbImg    = lb.querySelector('.cw-lb-img');
+  const lbClose  = lb.querySelector('.cw-lb-close');
+  const lbCap    = lb.querySelector('.cw-lb-caption');
+  const lbTitle  = lb.querySelector('.cw-lb-title');
+  const lbText   = lb.querySelector('.cw-lb-text');
+
+  function openLB(src, alt, title, text){
+    if (src) lbImg.src = src;
+    lbImg.alt = alt || 'Imagen ampliada';
+    if (title || text){
+      lbTitle.textContent = title || '';
+      lbText.textContent  = text || '';
+      lbCap.style.display = 'block';
+    } else {
+      lbTitle.textContent = '';
+      lbText.textContent  = '';
+      lbCap.style.display = 'none';
+    }
+    lb.classList.add('open');
+    lb.setAttribute('aria-hidden','false');
+    lbClose.focus();
+  }
+  function closeLB(){
+    lb.classList.remove('open');
+    lb.setAttribute('aria-hidden','true');
+  }
+  lbClose.addEventListener('click', closeLB);
+  lb.addEventListener('click', (e)=>{ if (e.target === lb) closeLB(); });
+  document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && lb.classList.contains('open')) closeLB(); });
+
+  // Expose for other parts (optional)
+  window.__cwOpenLB = openLB;
+
+  // Delegated clicks for images inside the chat area ONLY
+  panel.addEventListener('click', (e)=>{
+    const img = e.target.closest('img');
+    if (!img) return;
+    // Only allow known room images inside chat
+    if (img.classList.contains('cw-room-thumb') || img.classList.contains('cw-room-img')){
+      // Try to infer title from closest modal/card
+      let title = '';
+      const modalHead = img.closest('.cw-modal')?.querySelector('.cw-modal-head');
+      if (modalHead) title = modalHead.textContent.trim();
+      openLB(img.src, img.alt || '', title, '');
+    }
+  });
+
+  // Make all “Ver habitación” buttons more prominent automatically
+  const upgradeCalloutButtons = () => {
+    panel.querySelectorAll('button').forEach(btn => {
+      const label = (btn.textContent || '').trim().toLowerCase();
+      if (label === 'ver habitación'){
+        btn.classList.add('cw-callout', 'cw-pulse');
+        // Remove pulse after first animation cycle to keep it subtle
+        setTimeout(()=> btn.classList.remove('cw-pulse'), 1800);
+      }
+    });
+  };
+
+  // Run on load and whenever new content is appended to the chat
+  upgradeCalloutButtons();
+
+  // Observe DOM changes inside panel to catch newly added steps/cards
+  const obs = new MutationObserver(() => upgradeCalloutButtons());
+  obs.observe(panel, { childList:true, subtree:true });
 })();
